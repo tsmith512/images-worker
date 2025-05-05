@@ -1,5 +1,5 @@
 import { env } from 'cloudflare:workers';
-import { Router, IRequest } from 'itty-router';
+import { Router, IRequest, withParams, error, StatusError, json } from 'itty-router';
 
 // Bindings in config:
 interface Env {
@@ -10,16 +10,31 @@ interface Env {
 
 // TypeScript shenanigans
 type CFArgs = [Env, ExecutionContext];
-const router = Router<IRequest, CFArgs>();
+const router = Router<IRequest, CFArgs>({
+	before: [withParams],
+	catch: error,
+	finally: [json]
+});
+
+// Image Variants
+const variants = {
+	"original": {},
+}
 
 router.get('/', () => `Hello from images-worker!`);
 
-router.get('/original/sample', async (req: IRequest, env: Env) => {
+router.get('/:variant/sample', async (req: IRequest, env: Env) => {
+	const variant = req.params.variant;
+
+	if (!variants.hasOwnProperty(variant)) {
+		throw new StatusError(400, 'Requested varinant not defined');
+	}
+
 	const imgPath = `${env.IMAGES_ROOT}/2024-07-12-legally-blonde/DJI_0034.jpg`;
 	const imageObject = await env.ASSETS.get(imgPath);
 
 	if (imageObject === null) {
-		return new Response(`No object at ${imgPath}`, {status: 404});
+		throw new StatusError(404, 'Image source not found');
 	}
 
 	const headers = new Headers();
@@ -27,6 +42,6 @@ router.get('/original/sample', async (req: IRequest, env: Env) => {
 	return new Response(imageObject.body, { headers });
 });
 
-router.get('*', () => new Response(null, { status: 404 }));
+router.get('*', () => error(404));
 
 export default router satisfies ExportedHandler<Env>;

@@ -31,13 +31,13 @@ type VariantGenerator = (
 	env: Env
 ) => Promise<ReadableStream>;
 
+// These methods do the image transformation work. Each accepts an R2 object
+// and returns a ReadableStream of the resulting image to include with response.
 const variants: {[key: string]: VariantGenerator} = {
 	// For consistency, just return the R2ObjectBody's body as a ReadableStream
 	"original": async (input, env) => input.body,
 
 	// The "lightbox" content images: resize to 1600 wide
-	// Load the image, resize it, output as a jpeg, return the ReadableStream to
-	// the handler.
 	"full": async (input, env) => {
 		const transformation = await env.IMAGES
 			.input(input.body)
@@ -45,7 +45,8 @@ const variants: {[key: string]: VariantGenerator} = {
 				width: 1600
 			})
 			.output({
-				format: 'image/jpeg'
+				format: 'image/jpeg',
+				quality: 90,
 			});
 		return transformation.image();
 	},
@@ -73,7 +74,8 @@ const variants: {[key: string]: VariantGenerator} = {
 				}
 			)
 			.output({
-				format: 'image/jpeg'
+				format: 'image/jpeg',
+				quality: 90,
 			});
 		return transformation.image();
 	},
@@ -102,7 +104,10 @@ const variants: {[key: string]: VariantGenerator} = {
 				height: 600,
 				fit: 'cover',
 			})
-			.output({ format: 'image/jpeg' });
+			.output({
+				format: 'image/jpeg',
+				quality: 80,
+			});
 		return transformation.image();
 	},
 
@@ -111,7 +116,10 @@ const variants: {[key: string]: VariantGenerator} = {
 		const transformation = await env.IMAGES
 			.input(input.body)
 			.transform({ width: 700 })
-			.output({ format: 'image/jpeg' });
+			.output({
+				format: 'image/jpeg',
+				quality: 80,
+			});
 		return transformation.image();
 	},
 
@@ -120,7 +128,10 @@ const variants: {[key: string]: VariantGenerator} = {
 		const transformation = await env.IMAGES
 			.input(input.body)
 			.transform({ width: 400 })
-			.output({ format: 'image/jpeg' });
+			.output({
+				format: 'image/jpeg',
+				quality: 75,
+			});
 		return transformation.image();
 	},
 }
@@ -188,6 +199,8 @@ router.get('/make/:variant/:filename+', async (req: IRequest, env: Env) => {
 	return jpeg(await variants[variant](imageObject, env));
 });
 
+// Anything else is not found
 router.get('*', () => error(404));
 
+// Export the router to handle all inbound requests
 export default router satisfies ExportedHandler<Env>;

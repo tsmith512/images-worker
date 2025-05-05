@@ -105,14 +105,15 @@ const variants: {[key: string]: VariantGenerator} = {
 
 router.get('/', () => `Hello from images-worker!`);
 
-router.get('/:variant/sample', async (req: IRequest, env: Env) => {
+router.get('/:variant/:filename+', async (req: IRequest, env: Env) => {
 	const variant = req.params.variant;
+	const filename = req.params.filename;
 
 	if (!variants.hasOwnProperty(variant)) {
 		throw new StatusError(400, 'Requested varinant not defined');
 	}
 
-	const imgPath = `${env.IMAGES_ROOT}/2024-07-12-legally-blonde/DJI_0034.jpg`;
+	const imgPath = `${env.IMAGES_ROOT}/${filename}`;
 	const imageObject = await env.ASSETS.get(imgPath);
 
 	if (imageObject === null) {

@@ -1,5 +1,12 @@
-import { env } from 'cloudflare:workers';
-import { Router, IRequest, withParams, error, StatusError, json, jpeg } from 'itty-router';
+import {
+	Router,
+	IRequest,
+	withParams,
+	error,
+	StatusError,
+	json,
+	jpeg
+} from 'itty-router';
 
 // Bindings in config:
 interface Env {
@@ -10,6 +17,8 @@ interface Env {
 
 // TypeScript shenanigans
 type CFArgs = [Env, ExecutionContext];
+
+// Define the main router to automatically parse parameters and format responses
 const router = Router<IRequest, CFArgs>({
 	before: [withParams],
 	catch: error,
@@ -84,8 +93,21 @@ const variants: {[key: string]: VariantGenerator} = {
 		return transformation.image();
 	},
 
-	// Thumbnail previews
-	"700": async (input, env) => {
+	// Square crop
+	"sq": async (input, env) => {
+		const transformation = await env.IMAGES
+			.input(input.body)
+			.transform({
+				width: 600,
+				height: 600,
+				fit: 'cover',
+			})
+			.output({ format: 'image/jpeg' });
+		return transformation.image();
+	},
+
+	// Thumbnail previews for larger previews and retina displays
+	"th2x": async (input, env) => {
 		const transformation = await env.IMAGES
 			.input(input.body)
 			.transform({ width: 700 })
@@ -94,7 +116,7 @@ const variants: {[key: string]: VariantGenerator} = {
 	},
 
 	// Thumbnail previews
-	"400": async (input, env) => {
+	"th": async (input, env) => {
 		const transformation = await env.IMAGES
 			.input(input.body)
 			.transform({ width: 400 })
@@ -103,9 +125,52 @@ const variants: {[key: string]: VariantGenerator} = {
 	},
 }
 
+// Hello
 router.get('/', () => `Hello from images-worker!`);
 
-router.get('/:variant/:filename+', async (req: IRequest, env: Env) => {
+// Generate a page showing each available variant
+router.get('/sheet/:filename+', async (req: IRequest, env: Env) => {
+	const filename = req.params.filename;
+
+	let results = [];
+
+	results.push(`<h1>${filename}</h1>`);
+
+	for (const key in variants) {
+		if (key == 'original') {
+			continue;
+		}
+
+		results.push(`
+			<h2>${key}</h2>
+			<img src='/make/${key}/${filename}' />
+		`);
+	}
+
+	return new Response(`
+		<!DOCTYPE html>
+		<html lang="en">
+		<head>
+				<meta charset="UTF-8" />
+				<title>Image Variant Sheet for ${filename}</title>
+				<style>
+					img { max-width: 100%; height: auto; }
+				</style>
+		</head>
+		<body>
+				${results.join('\n')}
+		</body>
+		</html>
+		`, {
+			headers: {
+				'Content-Type': 'text/html; charset=utf-8'
+			},
+		}
+	);
+});
+
+// Generate a specific variant (defined above) of a photo from R2
+router.get('/make/:variant/:filename+', async (req: IRequest, env: Env) => {
 	const variant = req.params.variant;
 	const filename = req.params.filename;
 

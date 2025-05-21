@@ -24,6 +24,7 @@
 	 */
 	"r2_buckets": [{ "binding": "ASSETS", "bucket_name": "tsmith-website-build-assets" }],
 	"images": { "binding": "IMAGES" },
+	"ai": { "binding": "AI" },
 
 	/**
 	 * Environment Variables

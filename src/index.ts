@@ -199,6 +199,30 @@ router.get('/make/:variant/:filename+', async (req: IRequest, env: Env) => {
 	return jpeg(await variants[variant](imageObject, env));
 });
 
+// Generate a specific variant (defined above) of a photo from R2
+router.get('/ai/:task/:filename+', async (req: IRequest, env: Env) => {
+	const task = req.params.task;
+	const filename = req.params.filename;
+
+	const imgPath = `${env.IMAGES_ROOT}/${filename}`;
+	const imageObject = await env.ASSETS.get(imgPath);
+
+	if (imageObject === null) {
+		throw new StatusError(404, 'Image source not found');
+	}
+
+	const response = await env.AI.run(
+		"@cf/unum/uform-gen2-qwen-500m",
+		{
+			image: imageObject.body,
+			prompt: "Generate accessibility text to describe this photograph.",
+			max_tokens: 512,
+		}
+	)
+
+	return response;
+});
+
 // Anything else is not found
 router.get('*', () => error(404));
 

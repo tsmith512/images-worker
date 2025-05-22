@@ -238,17 +238,24 @@ router.get('/ai/:task/:filename+', async (req: IRequest, env: Env) => {
 		quality: 70,
 	});
 
-	const response = await env.AI.run(
-		// "@cf/unum/uform-gen2-qwen-500m",
-		"@cf/microsoft/resnet-50",
-		{
-			image: [...await readableStreamToUint8Array(transformation.image())],
-			// prompt: "Generate accessibility text to describe this photograph.",
-			// max_tokens: 512,
-		}
-	)
-
-	return response;
+	switch (task) {
+		case "classify":
+			return await env.AI.run(
+				"@cf/microsoft/resnet-50",
+				{
+					image: [...await readableStreamToUint8Array(transformation.image())],
+				}
+			)
+		case "describe":
+			return await env.AI.run(
+				"@cf/unum/uform-gen2-qwen-500m",
+				{
+					image: [...await readableStreamToUint8Array(transformation.image())],
+					prompt: "Generate accessibility text to describe this photograph.",
+					max_tokens: 256,
+				}
+			)
+	}
 });
 
 // Anything else is not found

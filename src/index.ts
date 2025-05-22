@@ -136,14 +136,17 @@ const variants: {[key: string]: VariantGenerator} = {
 	},
 };
 
-const readableStreamToUint8Array = async (input: ReadableStream): Promise<Uint8Array> => {
+const readableStreamToUint8Array = async (input: ReadableStream<Uint8Array>): Promise<Uint8Array> => {
 	let chunks = [];
 
 	for await (const chunk of input) {
 		chunks.push(chunk);
 	}
 
-	return new Uint8Array(chunks);
+	let result = new Uint8Array(chunks.length)
+	chunks.forEach((v, i) => result.set(v, i));
+
+	return result;
 };
 
 // Hello

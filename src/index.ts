@@ -136,25 +136,6 @@ const variants: {[key: string]: VariantGenerator} = {
 	},
 };
 
-const readableStreamToUint8Array = async (input: ReadableStream<Uint8Array>): Promise<Uint8Array> => {
-	let chunks = [];
-
-	for await (const chunk of input) {
-		chunks.push(chunk);
-	}
-
-	const length = chunks.reduce((total, chunk) => total + chunk.length, 0);
-	const result = new Uint8Array(length);
-
-	let i = 0;
-		for (const chunk of chunks) {
-		result.set(chunk, i);
-		i += chunk.length;
-	}
-
-	return result;
-};
-
 // Hello
 router.get('/', () => `Hello from images-worker!`);
 
@@ -243,14 +224,14 @@ router.get('/ai/:task/:filename+', async (req: IRequest, env: Env) => {
 			return await env.AI.run(
 				"@cf/microsoft/resnet-50",
 				{
-					image: [...await readableStreamToUint8Array(transformation.image())],
+					image: await transformation.response().bytes(),
 				}
 			)
 		case "describe":
 			return await env.AI.run(
 				"@cf/unum/uform-gen2-qwen-500m",
 				{
-					image: [...await readableStreamToUint8Array(transformation.image())],
+					image: await transformation.response().bytes(),
 					prompt: "Generate accessibility text to describe this photograph.",
 					max_tokens: 256,
 				}

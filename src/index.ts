@@ -214,7 +214,7 @@ router.get('/ai/:task/:filename+', async (req: IRequest, env: Env) => {
 	const response = await env.AI.run(
 		"@cf/unum/uform-gen2-qwen-500m",
 		{
-			image: imageObject.body,
+			image: [... new Uint8Array(await imageObject.arrayBuffer())],
 			prompt: "Generate accessibility text to describe this photograph.",
 			max_tokens: 512,
 		}

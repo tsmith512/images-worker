@@ -143,8 +143,14 @@ const readableStreamToUint8Array = async (input: ReadableStream<Uint8Array>): Pr
 		chunks.push(chunk);
 	}
 
-	let result = new Uint8Array(chunks.length + 1);
-	chunks.forEach((v, i) => result.set(v, i));
+	const length = chunks.reduce((total, chunk) => total + chunk.length, 0);
+	const result = new Uint8Array(length);
+
+	let i = 0;
+		for (const chunk of chunks) {
+		result.set(chunk, i);
+		i += chunk.length;
+	}
 
 	return result;
 };

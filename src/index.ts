@@ -149,9 +149,13 @@ router.get('/sheet/:filename+', async (req: IRequest, env: Env) => {
 
 	results.push(`
 		<h2>Analysis</h2>
-		<p data-fetch="/ai/describe/${filename}"></p>
-		<pre data-fetch="/ai/classify/${filename}"></pre>
-	`)
+		<p><strong>Image Description</strong> with <a href="https://developers.cloudflare.com/workers-ai/models/uform-gen2-qwen-500m/">uform-gen2-qwen-500m</a></p>
+		<p data-fetch="/ai/describe/${filename}">Loading...</p>
+		<p><strong>Image Classification</strong> with <a href="https://developers.cloudflare.com/workers-ai/models/resnet-50/">resnet-50</a></p>
+		<pre data-fetch="/ai/classify/${filename}">Loading...</pre>
+		<p><strong>Image Detection</strong> with <a href="https://developers.cloudflare.com/workers-ai/models/detr-resnet-50/">detr-resnet-50</a></p>
+		<pre data-fetch="/ai/classify/${filename}">Loading...</pre>
+	`);
 
 	for (const key in variants) {
 		if (key == 'original') {
@@ -246,7 +250,7 @@ router.get('/ai/:task/:filename+', async (req: IRequest, env: Env) => {
 				{
 					image: Array.from(await transformation.response().bytes()),
 				}
-			)
+			);
 		case "describe":
 			return await env.AI.run(
 				"@cf/unum/uform-gen2-qwen-500m",
@@ -255,7 +259,14 @@ router.get('/ai/:task/:filename+', async (req: IRequest, env: Env) => {
 					prompt: "Generate accessibility text to describe this photograph.",
 					max_tokens: 256,
 				}
-			)
+			);
+		case "detect":
+			return await env.AI.run(
+				"@cf/facebook/detr-resnet-50",
+				{
+					image: Array.from(await transformation.response().bytes()),
+				}
+			);
 	}
 });
 

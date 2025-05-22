@@ -226,18 +226,19 @@ router.get('/ai/:task/:filename+', async (req: IRequest, env: Env) => {
 
 	const transformation = await env.IMAGES
 	.input(imageObject.body)
-	.transform({ width: 1000 })
+	.transform({ width: 800 })
 	.output({
 		format: 'image/jpeg',
 		quality: 70,
 	});
 
 	const response = await env.AI.run(
-		"@cf/unum/uform-gen2-qwen-500m",
+		// "@cf/unum/uform-gen2-qwen-500m",
+		"@cf/microsoft/resnet-50",
 		{
 			image: [...await readableStreamToUint8Array(transformation.image())],
-			prompt: "Generate accessibility text to describe this photograph.",
-			max_tokens: 512,
+			// prompt: "Generate accessibility text to describe this photograph.",
+			// max_tokens: 512,
 		}
 	)
 

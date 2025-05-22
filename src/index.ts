@@ -147,6 +147,12 @@ router.get('/sheet/:filename+', async (req: IRequest, env: Env) => {
 
 	results.push(`<h1>${filename}</h1>`);
 
+	results.push(`
+		<h2>Analysis</h2>
+		<p data-fetch="/ai/describe/${filename}"></p>
+		<pre data-fetch="/ai/classify/${filename}"></pre>
+	`)
+
 	for (const key in variants) {
 		if (key == 'original') {
 			continue;
@@ -170,6 +176,20 @@ router.get('/sheet/:filename+', async (req: IRequest, env: Env) => {
 		</head>
 		<body>
 				${results.join('\n')}
+				<script>
+					document.querySelectorAll('*[data-fetch]').forEach(async (el) => {
+						const result = await fetch(el.dataset.fetch).then(r => r.json());
+
+						switch (el.tagName) {
+							case "PRE":
+								el.innerText = JSON.stringify(result, null, 2);
+								break;
+							case "P":
+								el.innerText = result.description;
+								break;
+						}
+					});
+				</script>
 		</body>
 		</html>
 		`, {

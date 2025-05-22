@@ -134,7 +134,17 @@ const variants: {[key: string]: VariantGenerator} = {
 			});
 		return transformation.image();
 	},
-}
+};
+
+const readableStreamToUint8Array = async (input: ReadableStream): Promise<Uint8Array> => {
+	let chunks = [];
+
+	for await (const chunk of input) {
+		chunks.push(chunk);
+	}
+
+	return new Uint8Array(chunks);
+};
 
 // Hello
 router.get('/', () => `Hello from images-worker!`);
@@ -211,10 +221,18 @@ router.get('/ai/:task/:filename+', async (req: IRequest, env: Env) => {
 		throw new StatusError(404, 'Image source not found');
 	}
 
+	const transformation = await env.IMAGES
+	.input(imageObject.body)
+	.transform({ width: 1000 })
+	.output({
+		format: 'image/jpeg',
+		quality: 70,
+	});
+
 	const response = await env.AI.run(
 		"@cf/unum/uform-gen2-qwen-500m",
 		{
-			image: [... new Uint8Array(await imageObject.arrayBuffer())],
+			image: [...await readableStreamToUint8Array(transformation.image())],
 			prompt: "Generate accessibility text to describe this photograph.",
 			max_tokens: 512,
 		}

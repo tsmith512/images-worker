@@ -224,14 +224,14 @@ router.get('/ai/:task/:filename+', async (req: IRequest, env: Env) => {
 			return await env.AI.run(
 				"@cf/microsoft/resnet-50",
 				{
-					image: await transformation.response().bytes(),
+					image: await (new Response(transformation.image()).bytes()),
 				}
 			)
 		case "describe":
 			return await env.AI.run(
 				"@cf/unum/uform-gen2-qwen-500m",
 				{
-					image: await transformation.response().bytes(),
+					image: await (new Response(transformation.image()).bytes()),
 					prompt: "Generate accessibility text to describe this photograph.",
 					max_tokens: 256,
 				}
